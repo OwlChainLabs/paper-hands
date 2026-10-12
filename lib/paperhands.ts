@@ -7,6 +7,7 @@ import { fetchOwnTrades } from "./helius-gtfa";
 import { fetchPrices, SOL_MINT } from "./prices";
 
 const MAX_COINS = 60; // biggest sells by SOL received, keeps price lookups fast
+const MIN_DIFF = 5; // USD, smaller moves are noise
 
 export type Coin = {
   mint: string;
@@ -68,8 +69,8 @@ async function compute(wallet: string): Promise<Result> {
     };
   });
 
-  const regrets = coins.filter((c) => c.diff > 0).sort((a, b) => b.diff - a.diff);
-  const exits = coins.filter((c) => c.diff < 0).sort((a, b) => a.diff - b.diff);
+  const regrets = coins.filter((c) => c.diff >= MIN_DIFF).sort((a, b) => b.diff - a.diff);
+  const exits = coins.filter((c) => c.diff <= -MIN_DIFF).sort((a, b) => a.diff - b.diff);
 
   return {
     wallet,
@@ -94,7 +95,17 @@ export function usd(n: number): string {
   return `${n < 0 ? "-" : ""}$${s}`;
 }
 
-export function verdict(left: number): string {
+// nothing worth sharing on the table? then the story is how much selling saved you
+export function isSaver(r: Result): boolean {
+  return r.leftOnTable < 50 && r.dodged > r.leftOnTable;
+}
+
+export function verdict(left: number, saved = 0): string {
+  if (saved > 0) {
+    if (saved >= 10_000) return "certified exit god";
+    if (saved >= 1_000) return "sniper exits";
+    return "sold before the rug";
+  }
   if (left >= 100_000) return "generational paper hands";
   if (left >= 10_000) return "paper hands hall of fame";
   if (left >= 1_000) return "certified paper hands";

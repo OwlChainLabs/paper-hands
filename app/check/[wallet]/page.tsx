@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/site";
-import { getPaperHands, usd, verdict } from "@/lib/paperhands";
+import { getPaperHands, isSaver, usd, verdict } from "@/lib/paperhands";
 import { isValidWallet, shortAddr, shortHash } from "@/lib/validate";
 
 export const maxDuration = 60;
@@ -52,7 +52,10 @@ export default async function CheckPage({ params }: Props) {
   }
 
   const top = r.regrets[0];
-  const shareText = top
+  const saver = isSaver(r);
+  const shareText = saver
+    ? `selling saved me ${usd(r.dodged)}. everything i sold went lower 😎\n\ncheck yours 👉 ${SITE_URL.replace("https://", "")}\nby @OwlChainLabs\n\n`
+    : top
     ? `i left ${usd(r.leftOnTable)} on the table by paper handing ${top.symbol} and friends 💀\n\ncheck yours 👉 ${SITE_URL.replace("https://", "")}\nby @OwlChainLabs\n\n`
     : `i never paper handed a winner. apparently i sell at the right time 😎\n\ncheck yours 👉 ${SITE_URL.replace("https://", "")}\nby @OwlChainLabs\n\n`;
   const shareUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(`${SITE_URL}/check/${wallet}?r=${shortHash(String(Math.round(r.leftOnTable)))}`)}`;
@@ -61,9 +64,9 @@ export default async function CheckPage({ params }: Props) {
     <main className="rp">
       <section className="rp-roast">
         <span className="addr">{shortAddr(wallet)}</span>
-        <div className="ph-k">you left on the table</div>
-        <div className="ph-big">{usd(r.leftOnTable)}</div>
-        <div className="verdict ph-verdict">{verdict(r.leftOnTable)}</div>
+        <div className="ph-k">{saver ? "selling saved you" : "you left on the table"}</div>
+        <div className="ph-big">{usd(saver ? r.dodged : r.leftOnTable)}</div>
+        <div className="verdict ph-verdict">{saver ? verdict(0, r.dodged) : verdict(r.leftOnTable)}</div>
 
         {r.regrets.length > 0 && (
           <>
@@ -85,7 +88,11 @@ export default async function CheckPage({ params }: Props) {
         <div className="rp-grid">
           <div className="stat"><div className="k">coins sold</div><div className="v">{r.coins}</div></div>
           <div className="stat"><div className="k">sells</div><div className="v">{r.sells}</div></div>
-          <div className="stat"><div className="k">saved by selling</div><div className="v pos">{usd(r.dodged)}</div></div>
+          {saver ? (
+            <div className="stat"><div className="k">left on the table</div><div className="v">{usd(r.leftOnTable)}</div></div>
+          ) : (
+            <div className="stat"><div className="k">saved by selling</div><div className="v pos">{usd(r.dodged)}</div></div>
+          )}
           <div className="stat"><div className="k">biggest regret</div><div className="v neg">{top ? `${top.symbol} +${usd(top.diff)}` : "none"}</div></div>
           {r.bestExit && (
             <div className="stat" style={{ gridColumn: "1 / -1" }}>
@@ -97,7 +104,7 @@ export default async function CheckPage({ params }: Props) {
 
         <a className="share" href={shareUrl} target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-          share the pain
+          {saver ? "share your exits" : "share the pain"}
         </a>
         <a className="again" href="/">check another wallet</a>
         <a className="again" href="https://roast.owlchainlabs.xyz">get this wallet roasted →</a>

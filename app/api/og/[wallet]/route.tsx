@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getPaperHands, usd, verdict } from "@/lib/paperhands";
+import { getPaperHands, isSaver, usd, verdict } from "@/lib/paperhands";
 import { isValidWallet, shortAddr } from "@/lib/validate";
 
 export const maxDuration = 60;
@@ -12,11 +12,16 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (!isValidWallet(wallet)) return new Response("bad wallet", { status: 400 });
 
   let left = 0;
+  let saved = 0;
   let top = "";
   try {
     const r = await getPaperHands(wallet);
     left = r.leftOnTable;
-    top = r.regrets[0] ? `biggest regret: ${r.regrets[0].symbol}, worth ${usd(r.regrets[0].worthNow)} today` : "";
+    if (isSaver(r)) {
+      saved = r.dodged;
+      top = r.bestExit ? `best exit: ${r.bestExit.symbol}, saved ${usd(-r.bestExit.diff)}` : "";
+    }
+    else top = r.regrets[0] ? `biggest regret: ${r.regrets[0].symbol}, worth ${usd(r.regrets[0].worthNow)} today` : "";
   } catch {
     // fall back to a generic card
   }
@@ -32,13 +37,13 @@ export async function GET(_req: Request, { params }: Ctx) {
       >
         <div style={{ display: "flex", fontSize: 30, color: "#9aa0b8" }}>{`paper hands calculator · ${shortAddr(wallet)}`}</div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 34, color: "#9aa0b8" }}>i left on the table</div>
-          <div style={{ fontSize: 150, fontWeight: 800, color: "#14f195", lineHeight: 1.05 }}>{usd(left)}</div>
+          <div style={{ fontSize: 34, color: "#9aa0b8" }}>{saved ? "selling saved me" : "i left on the table"}</div>
+          <div style={{ fontSize: 150, fontWeight: 800, color: "#14f195", lineHeight: 1.05 }}>{usd(saved || left)}</div>
           <div style={{ fontSize: 30, color: "#c9cce0", marginTop: 8 }}>{top}</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: "#9945ff", border: "3px solid #9945ff", padding: "8px 16px", borderRadius: 10 }}>
-            {verdict(left).toUpperCase()}
+            {(saved ? verdict(0, saved) : verdict(left)).toUpperCase()}
           </div>
           <div style={{ fontSize: 26, color: "#9aa0b8" }}>@OwlChainLabs</div>
         </div>
