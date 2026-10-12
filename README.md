@@ -1,8 +1,15 @@
-# paper hands calculator
+# 🧻 paper-hands
 
-paste any solana wallet and see what the coins you sold would be worth today.
+paste a solana wallet. see what the coins you sold would be worth today.
 
-**live:** https://paperhands.owlchainlabs.xyz
+**try it: [paperhands.owlchainlabs.xyz](https://paperhands.owlchainlabs.xyz)**
+
+![paper-hands demo](./docs/demo.gif)
+
+> **no private keys. ever.** paper-hands only reads public on-chain data.
+> no wallet connect, no signing, nothing to approve.
+
+## how it works
 
 - reads only public on-chain data. no wallet connect, no signing, no private keys. ever.
 - sells come from the wallet's own transactions (helius `getTransactionsForAddress`)
